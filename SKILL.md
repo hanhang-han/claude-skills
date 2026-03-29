@@ -1,134 +1,121 @@
 ---
 name: error-journal
-description: 当 Claude Code 执行 bash 命令失败时，自动记录错误信息到全局错误日志。用于积累经验、避免重复犯错。触发关键词：错误记录、记下来、error journal、这个坑。
+description: Automatically logs errors when Claude Code executes bash commands. Builds a searchable knowledge base of mistakes and lessons learned. Trigger keywords: error, log, mistake, bug, remember, lesson, error journal.
 ---
 
-# Error Journal - 错误日志技能
+# Error Journal
 
-## 概述
+## Overview
 
-这个技能帮助 Claude Code 记录执行 bash 命令时遇到的错误，形成可检索的错误知识库。
+This skill helps Claude Code automatically log errors encountered during bash command execution, building a searchable knowledge base of mistakes and lessons learned to prevents repeated errors.
 
-## 何时使用
+## When to Use
 
-1. **自动触发**：当 bash 命令执行失败（返回非零退出码）时
-2. **手动触发**：用户说 "记下来这个错误"、"这个坑要记住"、"记录错误" 时
-3. **事后记录**：解决问题后，用户要求记录教训时
+1. **Auto-trigger**: When a bash command fails (returns non-zero exit code)
+2. **Manual trigger**: When user says "log this error", "remember this", "note this mistake"
+3. **Post-resolution**: After fixing a problem, log the solution and lessons learned
 
-## 错误日志位置
+## Error Log Location
 
 ```
 ~/.claude/skills/error-journal/references/error-log.md
 ```
 
-## 记录格式
-
-每条错误记录使用以下格式：
+## Record Format
 
 ```markdown
-## [#序号] 简短标题
+## [#1] Brief Title
 
-| 字段 | 内容 |
-|------|------|
-| **日期** | YYYY-MM-DD HH:MM |
-| **命令** | `执行的命令` |
-| **错误** | 错误信息摘要 |
-| **上下文** | 当时在做什么 |
-| **根因** | 为什么出错 |
-| **方案** | 如何解决的 |
-| **教训** | 以后如何避免 |
+| Field | Content |
+|-------|---------|
+| **Date** | YYYY-MM-DD HH:MM |
+| **Command** | `the command executed` |
+| **Error** | Error message summary |
+| **Context** | What task was you doing |
+| **Root Cause** | Why it happened |
+| **Solution** | How it was fixed |
+| **Lesson** | How to avoid in the future |
 
 ---
 ```
 
-## 工作流程
-
-### 1. 错误发生时
-
-当 bash 命令失败时：
-
-1. 读取 `references/error-log.md` 获取当前序号
-2. 分析错误原因
-3. 追加新记录到日志末尾
-4. 简短告知用户 "已记录此错误"
-
-### 2. 查询历史错误
-
-当用户问 "有没有遇到过..."、"之前是不是..." 时：
-
-1. 读取错误日志
-2. 搜索相关关键词
-3. 返回匹配的历史记录
-
-### 3. 解决问题后补充
-
-如果一开始只记录了错误，解决后：
-
-1. 找到对应的错误记录
-2. 补充 "方案" 和 "教训" 字段
-
-## 使用示例
-
-### 示例 1：自动记录
+## Workflow
 
 ```
-[Claude 执行命令]
+┌─────────────────┐
+│ Bash Error      │
+└────────┬────────┘
+         │
+         ▼
+   ┌─────────┐     ┌─────────────────┐
+   │ Failed?  ├────►│ Log to error-journal │
+   └─────────┘     └─────────────────┘
+         │                    │
+         ▼                    ▼
+    Continue              Search history on future
+```
+
+## Usage Examples
+
+### Example 1: Auto Log on Deployment Error
+```
+[Claude runs command]
 ssh root@server "docker-compose up -d"
 
-[终端返回]
+[Error]
 Error: port 80 already in use
 
-[Claude 自动记录]
-## #3 Docker 端口占用
+[Claude auto-logs]
+## #1 Docker Port Conflict
 
-| 字段 | 内容 |
-|------|------|
-| **日期** | 2024-01-15 14:30 |
-| **命令** | `docker-compose up -d` |
-| **错误** | port 80 already in use |
-| **上下文** | 部署服务到生产服务器 |
-| **根因** | (待分析) |
-| **方案** | (待解决) |
-| **教训** | (待总结) |
+| Field | Content |
+|-------|---------|
+| **Date** | 2024-01-15 14:30 |
+| **Command** | `docker-compose up -d` |
+| **Error** | port 80 already in use |
+| **Context** | Deploying to production server |
+| **Root Cause** | Another service using port 80 |
+| **Solution** | Stop conflicting service or change port |
+| **Lesson** | Check port usage before deployment: `lsof -i :80` |
+---
 ```
 
-### 示例 2：手动触发
-
+### Example 2: Manual Log on npm Error
 ```
-用户: 这个坑要记住，npm install 时要用 --legacy-peer-deps
+User: Remember this - npm install needs --legacy-peer-deps
 
-[Claude 记录]
-## #4 npm 依赖冲突
+[Claude logs]
+## #2 npm Peer Dependency Conflict
 
-| 字段 | 内容 |
-|------|------|
-| **日期** | 2024-01-15 15:00 |
-| **命令** | `npm install` |
-| **错误** | peer dependency conflict |
-| **上下文** | 安装项目依赖 |
-| **根因** | npm 7+ 严格检查 peer dependencies |
-| **方案** | 使用 `npm install --legacy-peer-deps` |
-| **教训** | 遇到 peer dep 冲突时，先尝试 --legacy-peer-deps |
-```
+| Field | Content |
+|-------|---------|
+| **Date** | 2024-01-15 15:00 |
+| **Command** | `npm install` |
+| **Error** | peer dependency conflict |
+| **Context** | Installing project dependencies |
+| **Root Cause** | npm 7+ strict peer dep checking |
+| **Solution** | Use `npm install --legacy-peer-deps` |
+| **Lesson** | When encountering peer dep conflicts, try --legacy-peer-deps first |
 
-### 示例 3：查询历史
-
-```
-用户: 之前遇到过端口占用的问题吗？
-
-[Claude 搜索日志]
-找到 #3 Docker 端口占用，当时是...
+---
 ```
 
-## 最佳实践
+### Example 3: Query History
+```
+User: Have we seen port conflicts before?
 
-1. **及时记录**：错误发生后立即记录，记忆最清晰
-2. **补充完整**：问题解决后，回去补全 "方案" 和 "教训"
-3. **简洁明了**：错误信息摘要即可，不需要完整堆栈
-4. **关键词友好**：标题和教训使用容易搜索的关键词
+[Claude searches log]
+Found #1 Docker Port Conflict, shows details...
+```
 
-## 反模式（避免）
+## Best Practices
 
-- 记录太详细，导致日志臃肿
-- 只记录不补充，缺少解决方案
-- 记录无关紧要的小错误
+1. **Log immediately**: Record errors right they memory is fresh
+2. **Keep complete**: After fixing, go back and fill in "Solution" and "Lesson"
+3. **Be concise**: Summarize error messages, no full stack traces needed
+4. **Search-friendly**: Use searchable keywords in titles and lessons
+
+## Anti-Patterns (Avoid)
+- Logging too much detail, making the log bloated
+- Recording without supplementing, missing solutions
+- Logging trivial errors that don't matter
