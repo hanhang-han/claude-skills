@@ -18,14 +18,15 @@ npx skills add hanhang-han/claude-skills@error-journal -g -y
 
 ### 功能特点
 
-- **自动触发**：当 bash 命令执行失败（返回非零退出码）时自动记录
+- **智能复用（核心功能）**：错误发生时，先搜索历史错误，如果找到类似错误，主动提示之前的解决方案
+- **自动记录**：当 bash 命令执行失败（返回非零退出码）时自动记录
 - **手动触发**：说 "记下来这个错误"、"这个坑要记住"、"记录错误" 时记录
 - **历史查询**：问 "有没有遇到过..." 时搜索历史错误
 
 ### 使用方法
 
-#### 自动记录
-当命令失败时，技能会自动记录错误信息：
+#### 智能复用（核心功能）
+当命令失败时，会先搜索历史错误，如果找到类似错误就主动提示解决方案：
 ```
 [执行命令]
 docker-compose up -d
@@ -33,7 +34,23 @@ docker-compose up -d
 [错误]
 Error: port 80 already in use
 
-[自动记录到错误日志]
+[Claude 搜索历史，发现类似错误 #3]
+⚠️ 发现类似历史错误 #3 Docker 端口占用
+之前的解决方案：先运行 `lsof -i :80` 查看占用进程，停止后再启动
+```
+
+#### 自动记录（新错误）
+如果是新错误，会自动记录：
+```
+[执行命令]
+npm install
+
+[错误]
+Error: peer dependency conflict
+
+[搜索历史，没找到类似错误]
+[Claude 记录新错误]
+已记录此错误 #4，解决后记得补充方案
 ```
 
 #### 手动记录
@@ -84,14 +101,15 @@ npx skills add hanhang-han/claude-skills@error-journal -g -y
 
 ### Features
 
+- **Smart Reuse (Core Feature)**: On error, first searches history for similar errors. If found, proactively suggests previous solutions
 - **Auto-trigger**: Automatically logs when a bash command fails (returns non-zero exit code)
 - **Manual trigger**: Logs when you say "log this error", "remember this", "note this mistake"
 - **History query**: Searches past errors when you ask "have we seen..."
 
 ### Usage
 
-#### Auto Logging
-When a command fails, the skill automatically logs the error:
+#### Smart Reuse (Core Feature)
+When a command fails, it first searches history. If a similar error is found, it suggests the previous solution:
 ```
 [Command executed]
 docker-compose up -d
@@ -99,7 +117,23 @@ docker-compose up -d
 [Error]
 Error: port 80 already in use
 
-[Auto-logged to error journal]
+[Claude searches history, finds similar error #3]
+⚠️ Found similar historical error #3 Docker Port Conflict
+Previous solution: Run `lsof -i :80` first to check the process, stop it, then start again
+```
+
+#### Auto Logging (New Errors)
+If it's a new error, it will be logged automatically:
+```
+[Command executed]
+npm install
+
+[Error]
+Error: peer dependency conflict
+
+[Searches history, no similar error found]
+[Claude logs new error]
+Logged this error #4, remember to add solution after fixing
 ```
 
 #### Manual Logging
